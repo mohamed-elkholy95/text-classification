@@ -42,7 +42,16 @@ class EmbeddingExtractor:
         if HAS_SENTENCE_TRANSFORMERS:
             try:
                 self._model = SentenceTransformer(self.model_name)
-                embeddings = self._model.encode(texts, show_progress_bar=False)
+                raw_embeddings = self._model.encode(texts, show_progress_bar=False)
+                # Reduce to requested embedding_dim via SVD if needed
+                if raw_embeddings.shape[1] != self.embedding_dim:
+                    self._svd = TruncatedSVD(
+                        n_components=min(self.embedding_dim, raw_embeddings.shape[1]),
+                        random_state=RANDOM_SEED,
+                    )
+                    embeddings = self._svd.fit_transform(raw_embeddings)
+                else:
+                    embeddings = raw_embeddings
                 self._is_fitted = True
                 logger.info("SentenceTransformer embeddings: %d dims", embeddings.shape[1])
                 return embeddings
@@ -72,7 +81,10 @@ class EmbeddingExtractor:
             raise RuntimeError("Call fit_transform first")
 
         if self._model is not None:
-            return self._model.encode(texts, show_progress_bar=False)
+            raw = self._model.encode(texts, show_progress_bar=False)
+            if self._svd is not None:
+                return self._svd.transform(raw)
+            return raw
 
         tfidf_matrix = self._tfidf.transform(texts)
         embeddings = self._svd.transform(tfidf_matrix)
