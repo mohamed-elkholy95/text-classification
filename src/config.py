@@ -43,3 +43,51 @@ STREAMLIT_THEME = {
     "secondaryBackgroundColor": "#262730",
     "textColor": "#ffffff",
 }
+
+# ─── Calibration ─────────────────────────────────────────────────────────────
+# Post-hoc calibration transforms raw decision scores into well-calibrated
+# probabilities so that "70 % confident" really means ~70 % accuracy.
+# See src/calibration.py for detailed rationale.
+CALIBRATION_CONFIG = {
+    # "platt" (logistic sigmoid) is fast and works well with small
+    # calibration sets; "isotonic" is more flexible but needs more data.
+    "method": "platt",
+}
+
+# ─── Cross-Validation ────────────────────────────────────────────────────────
+# Stratified k-fold CV provides a lower-variance estimate of model
+# performance than a single split, and stratification preserves class
+# proportions in each fold — critical for imbalanced datasets.
+# See src/cross_validation.py for details.
+CROSS_VALIDATION_CONFIG = {
+    # 5 folds is the most common default: it uses 80 % for training
+    # and gives a reasonable bias-variance trade-off in the estimate.
+    "n_splits": 5,
+    "random_state": RANDOM_SEED,
+    "shuffle": True,
+}
+
+# ─── Learning Curves ─────────────────────────────────────────────────────────
+# Learning curves diagnose underfitting vs overfitting by plotting
+# performance as training-set size grows.  The fractions below define
+# the points at which we measure the curve.
+# See src/learning_curves.py for the bias–variance interpretation.
+LEARNING_CURVE_CONFIG = {
+    # Fractions of the training data to evaluate at.  Starting small
+    # (10 %) highlights high-bias issues; ending at 100 % shows the
+    # best achievable performance with the current dataset.
+    "train_fractions": [0.1, 0.2, 0.4, 0.6, 0.8, 1.0],
+    "n_repeats": 1,
+    "random_state": RANDOM_SEED,
+}
+
+# ─── Text Analysis ───────────────────────────────────────────────────────────
+# Corpus-level text statistics used in EDA and feature engineering.
+# Understanding avg word count, vocabulary richness, and readability
+# per class can reveal spurious correlations or missing features.
+# See src/text_analyzer.py for implementation.
+TEXT_ANALYSIS_CONFIG = {
+    # Number of top words to report in the frequency table.
+    # 20–50 is a good range for quick EDA; increase for deeper analysis.
+    "top_n_words": 20,
+}
