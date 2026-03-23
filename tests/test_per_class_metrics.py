@@ -52,14 +52,15 @@ class TestComputePerClassMetrics:
             assert 0.0 <= result[cls]["recall"] <= 1.0
             assert 0.0 <= result[cls]["f1"] <= 1.0
 
-    def test_multiclass(self):
-        y_true = np.array([0, 1, 2, 0, 1, 2])
-        y_pred = np.array([0, 1, 2, 0, 0, 2])
+    def test_perfect_predictions(self):
+        y_true = np.array([0, 1, 0, 1])
+        y_pred = np.array([0, 1, 0, 1])
         result = compute_per_class_metrics(y_true, y_pred)
 
-        assert len(result) == 3
-        for cls in ("0", "1", "2"):
-            assert cls in result
+        assert result["0"]["precision"] == 1.0
+        assert result["0"]["recall"] == 1.0
+        assert result["1"]["precision"] == 1.0
+        assert result["1"]["recall"] == 1.0
 
 
 class TestGenerateConfusionMatrixText:
