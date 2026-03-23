@@ -101,13 +101,13 @@ class TestCompareEndpoint:
         assert len(data["models"]) > 0
 
     def test_compare_models_have_metrics(self):
-        """Each model entry should contain at least accuracy and f1 keys."""
+        """Each model entry should contain at least accuracy and f1_score keys."""
         resp = client.post("/compare", json={})
         data = resp.json()
         for model in data["models"]:
             assert "name" in model
             assert "accuracy" in model
-            assert "f1" in model
+            assert "f1_score" in model
 
     def test_compare_best_model_in_list(self):
         """best_model should reference one of the model names in the list."""
