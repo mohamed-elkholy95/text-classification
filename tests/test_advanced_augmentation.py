@@ -94,6 +94,6 @@ class TestAugmentDataset:
             "label": ["pos"] + ["neg"] * 9,
         })
         balanced = augment_dataset(df, augment_fn=simple_augment)
-        # pos had 1, neg had 10 -> should add 9 pos samples
-        assert balanced["label"].value_counts()["pos"] == 10
-        assert balanced["label"].value_counts()["neg"] == 10
+        # neg=9 (majority), pos=1 -> add 8 pos -> pos=9
+        assert balanced["label"].value_counts()["pos"] == 9
+        assert balanced["label"].value_counts()["neg"] == 9
