@@ -40,11 +40,29 @@ def compute_metrics(
         "recall": round(float(recall_score(y_true, y_pred, average="weighted", zero_division=0)), 4),
         "f1": round(float(f1_score(y_true, y_pred, average="weighted", zero_division=0)), 4),
     }
-    if y_proba is not None and len(np.unique(y_true)) == 2:
+    if y_proba is not None:
+        n_classes = len(np.unique(y_true))
         try:
-            metrics["roc_auc"] = round(float(roc_auc_score(y_true, y_proba[:, 1])), 4)
-            metrics["pr_auc"] = round(float(average_precision_score(y_true, y_proba[:, 1])), 4)
+            if n_classes == 2:
+                # Binary case: use the positive-class column directly.
+                # ROC-AUC measures how well the model ranks positive
+                # examples above negative ones (1.0 = perfect, 0.5 = random).
+                metrics["roc_auc"] = round(float(
+                    roc_auc_score(y_true, y_proba[:, 1])
+                ), 4)
+                metrics["pr_auc"] = round(float(
+                    average_precision_score(y_true, y_proba[:, 1])
+                ), 4)
+            elif n_classes > 2 and y_proba.shape[1] >= n_classes:
+                # Multiclass case: One-vs-Rest (OvR) macro-averaged AUC.
+                # Each class gets its own binary ROC curve (that class vs
+                # all others), then we average the areas.  "macro" gives
+                # equal weight to every class regardless of support.
+                metrics["roc_auc_ovr"] = round(float(
+                    roc_auc_score(y_true, y_proba, multi_class="ovr", average="macro")
+                ), 4)
         except (ValueError, IndexError):
+            # Can happen if y_proba shape is inconsistent with y_true
             pass
     return metrics
 
