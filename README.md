@@ -59,6 +59,9 @@
 | **Ensemble Methods** | Combine multiple weak learners into a stronger predictor. Voting averages predictions; stacking trains a meta-learner on base model outputs to capture complementary strengths. |
 | **Confidence Calibration** | Raw model scores aren't always true probabilities. Platt scaling (sigmoid) and isotonic regression transform scores so that "70% confident" actually means ~70% accuracy. |
 | **Cross-Validation** | Stratified k-fold CV splits data into k folds while preserving class ratios, giving a lower-variance estimate of generalization performance than a single train/test split. |
+| **Data Validation** | Checking for null values, empty strings, duplicates, and class imbalance *before* training prevents mysterious NaN losses and silently degraded accuracy — the most common source of ML bugs. |
+| **Model Persistence** | Serializing trained models with joblib enables instant inference at API startup without retraining. Companion metadata (timestamp, hyperparameters) supports experiment tracking and reproducibility. |
+| **Inference Pipeline** | Bundling preprocessing, feature extraction, and prediction into a single pipeline object prevents training-serving skew — the #1 cause of silent ML bugs in production. |
 
 > 📖 See [`docs/CONCEPTS.md`](docs/CONCEPTS.md) for deeper explanations of each concept.
 
@@ -76,6 +79,8 @@ text-classification/
 │   ├── model_comparison.py          # Side-by-side model benchmarking
 │   ├── text_analyzer.py             # Corpus-level text statistics
 │   ├── tuning.py                    # Grid search hyperparameter tuning
+│   ├── pipeline.py                  # End-to-end inference pipeline
+│   ├── persistence.py               # Model save/load with metadata tracking
 │   ├── data/
 │   │   ├── dataset_loader.py        # Synthetic data & CSV loaders
 │   │   ├── preprocessor.py          # Text cleaning, tokenization, label encoding
@@ -207,7 +212,11 @@ Building this project teaches core ML concepts through hands-on implementation:
 
 7. **Ensemble Methods** — Why combining diverse models reduces variance, how voting vs. stacking differ, and when ensembles are worth the complexity.
 
-8. **Production Considerations** — API design with FastAPI, Streamlit dashboards for non-technical stakeholders, and how to cache expensive computations.
+8. **Production Considerations** — API design with FastAPI, request tracing with X-Request-ID headers, Streamlit dashboards for non-technical stakeholders, and how to cache expensive computations.
+
+9. **Data Quality** — Why validating datasets before training (null checks, class balance, duplicate detection) prevents more production bugs than any amount of hyperparameter tuning.
+
+10. **Model Persistence** — How to serialize models with joblib, track provenance metadata, and build end-to-end inference pipelines that prevent training-serving skew.
 
 ## Author
 
