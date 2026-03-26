@@ -19,11 +19,13 @@ character-level heuristics.
 
 import logging
 import re
+import uuid
 from typing import List
 
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.api.models import (
     BatchInput,
@@ -52,6 +54,29 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ---------------------------------------------------------------------------
+# Request-ID middleware
+# ---------------------------------------------------------------------------
+# Attaching a unique ID to every request is a production best practice
+# for **distributed tracing**: when something goes wrong, you can
+# correlate API logs with client-side errors by matching the request ID.
+# ---------------------------------------------------------------------------
+
+
+class RequestIDMiddleware(BaseHTTPMiddleware):
+    """Attach a unique X-Request-ID header to every response."""
+
+    async def dispatch(self, request: Request, call_next):
+        request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
+        response = await call_next(request)
+        response.headers["X-Request-ID"] = request_id
+        return response
+
+
+app.add_middleware(RequestIDMiddleware)
+
 
 # ---------------------------------------------------------------------------
 # Global state (populated at startup by the training pipeline)
@@ -119,12 +144,26 @@ async def predict(input: TextInput) -> PredictionResponse:
     When no model is loaded (e.g. in pure-API mode), a neutral default
     prediction is returned so the endpoint always responds without error.
 
+    The endpoint performs basic input sanitization: texts consisting
+    entirely of whitespace are rejected with a 422 error rather than
+    producing meaningless predictions.
+
     Args:
         input: JSON body with a ``text`` field.
 
     Returns:
         :class:`PredictionResponse` with label, class name, and confidence.
+
+    Raises:
+        HTTPException(422): If text is empty or whitespace-only.
     """
+    # Guard against whitespace-only inputs that would produce meaningless
+    # TF-IDF vectors (all zeros) and therefore arbitrary predictions.
+    if not input.text.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="Text must contain at least one non-whitespace character.",
+        )
     if _tfidf is None:
         return PredictionResponse(
             text=input.text,
